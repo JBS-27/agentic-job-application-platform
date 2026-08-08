@@ -1,0 +1,49 @@
+# ---------------------------------------------------------------------------
+# Backend dependencies — Agentic AI Job Application Platform
+# Phase 1: Architecture & Initial Setup
+#
+# Notes:
+# - Versions are pinned to minor/major ranges for stability while allowing
+#   patch updates.
+# - Some packages (pypdf, playwright, motor, beanie) are installed now
+#   because they define the chosen stack, but their functionality will
+#   only be WIRED UP starting Phase 2 onwards. No code in this phase uses
+#   them for parsing, scraping, or automation yet.
+# ---------------------------------------------------------------------------
+
+# --- Core web framework ---
+fastapi==0.115.*
+uvicorn[standard]==0.32.*
+
+# --- Settings & validation ---
+pydantic==2.9.*
+pydantic-settings==2.6.*
+
+# --- Database (MongoDB) ---
+motor==3.6.*            # async MongoDB driver
+beanie==1.27.*           # ODM built on top of motor + pydantic (used from Phase 2)
+
+# --- PDF parsing (chosen for Phase 2, listed now to fix the stack) ---
+pypdf==5.1.*
+
+# --- Browser automation (chosen for Phase 5, listed now to fix the stack) ---
+playwright==1.48.*
+
+# --- HTTP client (job URL fetching, future LLM provider calls) ---
+httpx==0.27.*
+
+# --- Environment variable loading ---
+python-dotenv==1.0.*
+
+# --- File upload support ---
+python-multipart==0.0.12
+
+# --- Testing ---
+pytest==8.3.*
+pytest-asyncio==0.24.*
+reportlab==4.2.*        # used ONLY by tests to generate fixture PDFs
+respx==0.21.*            # used ONLY by tests to mock LLM provider HTTP calls
+
+# --- Dev tooling ---
+black==24.10.*
+ruff==0.7.*
