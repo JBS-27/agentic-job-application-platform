@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Easy Apply answers</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Easy Apply answers</h1>
+      <p class="lead">
+        These answers, your resume, and learned questions stay on this computer.
+        Start uses them automatically. Use Reset setup to see the preview again.
+      </p>
+
+      <form id="form">
+        <label>Phone<input id="phone" type="tel" autocomplete="tel" /></label>
+        <label>Email<input id="email" type="email" autocomplete="email" /></label>
+        <label>City<input id="city" type="text" /></label>
+        <label>Years of experience<input id="yearsExperience" type="text" /></label>
+        <label>Work authorized<select id="authorized"><option value="">Not set</option><option>Yes</option><option>No</option></select></label>
+        <label>Need visa sponsorship<select id="sponsorship"><option value="">Not set</option><option>No</option><option>Yes</option></select></label>
+        <label>Willing to relocate<select id="relocate"><option value="">Not set</option><option>No</option><option>Yes</option></select></label>
+        <label>Comfortable commuting / on-site<select id="commute"><option value="">Not set</option><option>Yes</option><option>No</option></select></label>
+        <label>Expected salary (optional)<input id="salary" type="text" /></label>
+        <label>Website / portfolio (optional)<input id="website" type="url" /></label>
+        <label>LinkedIn URL (optional)<input id="linkedinUrl" type="url" /></label>
+        <label>How did you hear about us<input id="hearAbout" type="text" /></label>
+        <label>Resume text<textarea id="resumeText" rows="6"></textarea></label>
+
+        <h2>Custom question matches</h2>
+        <p class="lead">If the question text contains the phrase, that answer is used.</p>
+        <div id="custom"></div>
+        <button id="addCustom" type="button" class="secondary">Add pair</button>
+
+        <div class="actions">
+          <button type="submit">Save</button>
+          <button id="resetSetup" type="button" class="secondary">Reset setup</button>
+          <p id="saved" class="saved" hidden>Saved</p>
+        </div>
+      </form>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>
