@@ -138,10 +138,10 @@
     chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       if (state.dead || !extensionAlive()) return;
       if (message.type === "START") {
-        start()
-          .then(() => sendResponse({ ok: true }))
-          .catch(() => sendResponse({ ok: false }));
-        return true;
+        // Starting a job run should not leave the message response pending until it finishes.
+        start().catch((error) => console.warn("Easy Apply helper", error));
+        sendResponse({ ok: true });
+        return false;
       }
       if (message.type === "STOP") {
         stop(message.status || "Stopped");
@@ -160,14 +160,15 @@
 
   async function maybeResume() {
     const saved = (await storageGet(["state"])).state;
-    if (saved?.running && (saved.resume || saved.phase === "profile")) start();
+    if (saved?.running && saved.resume) start();
   }
 
   async function start() {
     if (state.running) return;
-    const saved = (await storageGet(["state"])).state || {};
-    const resuming = Boolean(saved.resume);
+    // Claim the run before awaiting storage, so CONTENT_READY and START cannot race.
     state.running = true;
+    const saved = (await storageGet(["state"])).state || {};
+    const resuming = Boolean(saved.running && saved.resume);
     state.navigating = false;
     state.ignoreHideUntil = Date.now() + 2500;
     state.applied = resuming ? Number(saved.applied) || 0 : 0;
@@ -178,7 +179,12 @@
     state.skillYears = memory.skillYears || {};
     state.resumeText = memory.resumeText || "";
     await storageSet({
-      state: { ...saved, running: true, resume: false },
+      state: {
+        ...saved,
+        running: true,
+        resume: false,
+        searchNavigationAttempted: resuming ? Boolean(saved.searchNavigationAttempted) : false,
+      },
     });
     ensureOverlay();
     report("Checking LinkedIn login…");
@@ -944,6 +950,7 @@
     assertRunning();
     report("Opening Easy Apply jobs…");
     await dismissAll();
+    const searchNavigationAttempted = Boolean((await storageGet(["state"])).state?.searchNavigationAttempted);
 
     if (onJobsSearch() && jobCards().length) {
       await enableEasyApplyFilter();
@@ -953,26 +960,32 @@
     }
 
     if (!onJobsSearch()) {
+      if (searchNavigationAttempted) {
+        stop("Could not open Easy Apply job search");
+        return false;
+      }
       await navigateAndResume("https://www.linkedin.com/jobs/search/?f_AL=true", {
         phase: "jobs",
         status: "Opening Easy Apply jobs…",
+        searchNavigationAttempted: true,
       });
       return false;
     }
 
     await enableEasyApplyFilter();
     await sleep(800);
-    if (!jobCards().length && !/[?&]f_AL=true/.test(location.search)) {
+    if (!jobCards().length && !/[?&]f_AL=true/i.test(location.search) && !searchNavigationAttempted) {
       await navigateAndResume("https://www.linkedin.com/jobs/search/?f_AL=true", {
         phase: "jobs",
         status: "Opening Easy Apply jobs…",
+        searchNavigationAttempted: true,
       });
       return false;
     }
 
     const found = await waitFor(() => jobCards().length > 0, 12000);
     if (!found) {
-      report("No Easy Apply jobs on this page");
+      stop("No Easy Apply jobs on this page");
       return false;
     }
     report(`Found ${jobCards().length} jobs`);
@@ -1042,6 +1055,7 @@
         skipped: state.skipped,
         status: extra.status || "Opening LinkedIn…",
         phase: extra.phase || saved.phase || "jobs",
+        searchNavigationAttempted: Boolean(extra.searchNavigationAttempted || saved.searchNavigationAttempted),
       },
     });
     location.assign(url);
@@ -1731,8 +1745,9 @@
     const opts = { bubbles: true, cancelable: true, view: window };
     el.dispatchEvent(new MouseEvent("mousedown", opts));
     el.dispatchEvent(new MouseEvent("mouseup", opts));
-    el.dispatchEvent(new MouseEvent("click", opts));
+    // A manual click event plus el.click() activated controls twice (including filter toggles).
     if (typeof el.click === "function") el.click();
+    else el.dispatchEvent(new MouseEvent("click", opts));
   }
 
   function setReactValue(el, value) {
